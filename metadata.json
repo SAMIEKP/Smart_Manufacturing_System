@@ -1,0 +1,24 @@
+{
+  "name": "AutoFab Pro Dashboard",
+  "description": "Interactive smart manufacturing dashboard featuring real-time visual data metrics, production line detail views, machine telemetry, shift planning, quality report pareto distributions, and alert management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "data-visualization",
+    "real-time-updates",
+    "interactive-ui",
+    "dashboard-integration"
+  ],
+  "minorCapabilities": [
+    "custom-charts",
+    "data-filtering",
+    "user-interactions",
+    "responsive-design"
+  ],
+  "tags": [
+    "manufacturing",
+    "dashboard",
+    "data-visualization",
+    "real-time",
+    "interactive"
+  ]
+}
