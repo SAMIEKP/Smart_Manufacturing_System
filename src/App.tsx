@@ -39,6 +39,7 @@ import {
   INITIAL_INSPECTIONS, 
   DEFAULT_THRESHOLDS 
 } from './data';
+import { fetchAlerts, fetchOperators, fetchThresholds } from './apiClient';
 
 const INITIAL_MAINTENANCE: MaintenanceEvent[] = [
   {
@@ -171,6 +172,27 @@ export default function App() {
   const [inspections, setInspections] = useState<InspectionLog[]>(INITIAL_INSPECTIONS);
   const [thresholds, setThresholds] = useState<AlertThresholds>(DEFAULT_THRESHOLDS);
   const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>(INITIAL_MAINTENANCE);
+
+  // Load persisted UI-critical state from backend
+  useEffect(() => {
+    (async () => {
+      try {
+        const [a, o, t] = await Promise.all([
+          fetchAlerts(),
+          fetchOperators(),
+          fetchThresholds(),
+        ]);
+        setAlerts(a as any);
+        setOperators(o as any);
+        setThresholds(t as any);
+      } catch (e) {
+        // Fallback to existing in-memory simulation data
+        console.warn('Backend bootstrap failed, using local simulation defaults.', e);
+      }
+    })();
+  }, []);
+
+
 
   // Monitor maintenance events and trigger alerts for items within 48 hours of June 15, 2026
   useEffect(() => {
@@ -365,7 +387,18 @@ export default function App() {
 
   // Alert management functions
   const handleAcknowledgeAlert = (id: string) => {
+    // optimistic update
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a));
+
+    // persist
+    fetch('http://127.0.0.1:5000/api/alerts/ack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: [id] }),
+    }).catch(() => {
+      // ignore; UI already updated
+    });
+
     if (soundEnabled) {
       try {
         // Play soft subtle native confirmation sound if possible
@@ -385,7 +418,18 @@ export default function App() {
   };
 
   const handleClearAllAlerts = () => {
+    // optimistic update
     setAlerts(prev => prev.map(a => ({ ...a, acknowledged: true })));
+
+    const ids = alerts.map(a => a.id);
+    fetch('http://127.0.0.1:5000/api/alerts/ack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    }).catch(() => {
+      // ignore
+    });
+
     alert('All ongoing warning notifications have been marked acknowledged.');
   };
 
