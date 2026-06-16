@@ -8,29 +8,22 @@ This repo contains a web app with:
 
 Frontend UI screenshots are stored in `assets/screenshots/`.
 
-- Dashboard: `assets/screenshots/dashboard.png`
-  
-  ![Dashboard](assets/screenshots/dashboard.png)
+<div align="center">
 
-- Production / Analytics: `assets/screenshots/production.png`
+| Dashboard | Production / Analytics |
+|---|---|
+| <img src="assets/screenshots/dashboard.png" alt="Dashboard" width="360" /> | <img src="assets/screenshots/production.png" alt="Production" width="360" /> |
 
-  ![Production](assets/screenshots/production.png)
+| Reports | Downtime / Analysis |
+|---|---|
+| <img src="assets/screenshots/report.png" alt="Reports" width="360" /> | <img src="assets/screenshots/analysis.png" alt="Analysis" width="360" /> |
 
-- Reports: `assets/screenshots/report.png`
+| Maintenance Scheduler | Settings |
+|---|---|
+| <img src="assets/screenshots/schedule maintanance.png" alt="Maintenance Scheduler" width="360" /> | <img src="assets/screenshots/settings.png" alt="Settings" width="360" /> |
 
-  ![Reports](assets/screenshots/report.png)
+</div>
 
-- Downtime / Analysis: `assets/screenshots/analysis.png`
-
-  ![Analysis](assets/screenshots/analysis.png)
-
-- Maintenance Scheduler: `assets/screenshots/schedule maintanance.png`
-
-  ![Maintenance Scheduler](assets/screenshots/schedule%20maintanance.png)
-
-- Settings: `assets/screenshots/settings.png`
-
-  ![Settings](assets/screenshots/settings.png)
 
 ## Prerequisites
 - **Node.js** (for the frontend)
