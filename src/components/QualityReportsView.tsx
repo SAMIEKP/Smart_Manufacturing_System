@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { InspectionLog } from '../types';
+import { createInspection } from '../apiClient';
 
 interface QualityReportsViewProps {
   inspections: InspectionLog[];
@@ -53,7 +54,7 @@ export default function QualityReportsView({ inspections, setInspections }: Qual
     item.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSaveInspection = (e: React.FormEvent) => {
+  const handleSaveInspection = async (e: React.FormEvent) => {
     e.preventDefault();
     const d = new Date();
     const timestamp = d.toTimeString().split(' ')[0]; // HH:MM:SS
@@ -69,14 +70,18 @@ export default function QualityReportsView({ inspections, setInspections }: Qual
       cycleTime: Number(newCycleTime)
     };
 
-    setInspections([newLog, ...inspections]);
-    setIsModalOpen(false);
-
-    // Reset fields
-    setNewPartId(`CH-${Math.floor(Math.random() * 9000 + 1000)}-Z`);
-    setNewType('Weld Integrity');
-    setNewStatus('PASS');
-    setNewSeverity('N/A');
+    try {
+      await createInspection(newLog);
+      setInspections([newLog, ...inspections]);
+      setIsModalOpen(false);
+      setNewPartId(`CH-${Math.floor(Math.random() * 9000 + 1000)}-Z`);
+      setNewType('Weld Integrity');
+      setNewStatus('PASS');
+      setNewSeverity('N/A');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save inspection log. Please try again.');
+    }
   };
 
   const handleExportPDF = () => {

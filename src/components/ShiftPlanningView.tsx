@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Operator, ShiftAssignment } from '../types';
+import { createShiftAssignment, deleteShiftAssignment } from '../apiClient';
 
 const PLANNING_MACHINES = [
   { name: 'CNC ALPHA-1', baseline: 85 },
@@ -53,7 +54,7 @@ export default function ShiftPlanningView({
     setSelectedOperatorId(selectedOperatorId === id ? null : id);
   };
 
-  const handleSlotClick = (line: string, day: string) => {
+  const handleSlotClick = async (line: string, day: string) => {
     if (!selectedOperatorId) {
       alert('Select an Available Operator from the left panel first, then click any schedule slot to assign them!');
       return;
@@ -67,12 +68,11 @@ export default function ShiftPlanningView({
       return;
     }
 
-    // Determine machine expertise level of selected operator for this line
     const requiredMachine = line === 'Line A' 
       ? 'CNC ALPHA-1' 
       : line === 'Line B' 
       ? 'PRESS DELTA-04' 
-      : 'LATHE SIGMA-1'; // Line C primary
+      : 'LATHE SIGMA-1';
     const currentExp = o.expertise?.[requiredMachine] || 'None';
     if (currentExp === 'None' || currentExp === 'Beginner') {
       const confirmAssign = window.confirm(
@@ -81,7 +81,6 @@ export default function ShiftPlanningView({
       if (!confirmAssign) return;
     }
 
-    // Check if slot has already been assigned to this operator
     const alreadyExists = shiftAssignments.some(sa => sa.line === line && sa.day === day && sa.operatorId === selectedOperatorId);
     if (alreadyExists) {
       return;
@@ -96,11 +95,28 @@ export default function ShiftPlanningView({
 
     setShiftAssignments([...shiftAssignments, nAssignment]);
     setSelectedOperatorId(null);
+
+    try {
+      await createShiftAssignment(nAssignment);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save assignment. Please retry.');
+      setShiftAssignments(shiftAssignments);
+    }
   };
 
-  const handleRemoveAssignment = (id: string, e: React.MouseEvent) => {
+  const handleRemoveAssignment = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const prev = shiftAssignments;
     setShiftAssignments(shiftAssignments.filter(sa => sa.id !== id));
+
+    try {
+      await deleteShiftAssignment(id);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to remove assignment. Reverting.');
+      setShiftAssignments(prev);
+    }
   };
 
   return (

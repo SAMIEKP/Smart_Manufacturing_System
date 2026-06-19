@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Operator, MaintenanceEvent } from '../types';
+import { createMaintenance, updateMaintenance, deleteMaintenance } from '../apiClient';
 
 interface MaintenanceSchedulerViewProps {
   operators: Operator[];
@@ -62,8 +63,8 @@ export default function MaintenanceSchedulerView({
 
   const selectedDayEvents = events.filter(e => e.dueDate === selectedDateStr);
 
-  const handleAssignTechnician = (eventId: string, techId: string) => {
-    setEvents(events.map(ev => {
+  const handleAssignTechnician = async (eventId: string, techId: string) => {
+    const updatedEvents = events.map(ev => {
       if (ev.id === eventId) {
         return { 
           ...ev, 
@@ -72,19 +73,41 @@ export default function MaintenanceSchedulerView({
         };
       }
       return ev;
-    }));
+    });
+
+    setEvents(updatedEvents);
+
+    try {
+      await updateMaintenance(eventId, {
+        technicianId: techId || undefined,
+        status: updatedEvents.find(ev => ev.id === eventId)?.status || 'Scheduled'
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Could not assign technician. Please retry.');
+      setEvents(events);
+    }
   };
 
-  const handleUpdateStatus = (eventId: string, status: any) => {
-    setEvents(events.map(ev => {
+  const handleUpdateStatus = async (eventId: string, status: any) => {
+    const updatedEvents = events.map(ev => {
       if (ev.id === eventId) {
         return { ...ev, status };
       }
       return ev;
-    }));
+    });
+    setEvents(updatedEvents);
+
+    try {
+      await updateMaintenance(eventId, { status });
+    } catch (err) {
+      console.error(err);
+      alert('Unable to update status. Please try again.');
+      setEvents(events);
+    }
   };
 
-  const handleAddEvent = (e: React.FormEvent) => {
+  const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newServiceType.trim()) return;
 
@@ -100,15 +123,34 @@ export default function MaintenanceSchedulerView({
       notes: newNotes.trim() || undefined
     };
 
-    setEvents([...events, nEvent]);
-    setNewServiceType('');
-    setNewNotes('');
-    setShowAddForm(false);
+    try {
+      await createMaintenance(nEvent);
+      setEvents([...events, nEvent]);
+      setNewServiceType('');
+      setNewNotes('');
+      setNewTechId('');
+      setNewPriority('medium');
+      setShowAddForm(false);
+    } catch (err) {
+      console.error(err);
+      alert('Unable to add maintenance event. Please try again.');
+    }
   };
 
-  const handleDeleteEvent = (id: string) => {
-    if (confirm('Are you sure you want to delete this maintenance schedule block?')) {
-      setEvents(events.filter(e => e.id !== id));
+  const handleDeleteEvent = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this maintenance schedule block?')) {
+      return;
+    }
+
+    const prevEvents = events;
+    setEvents(events.filter(e => e.id !== id));
+
+    try {
+      await deleteMaintenance(id);
+    } catch (err) {
+      console.error(err);
+      alert('Unable to delete maintenance event. Reverting.');
+      setEvents(prevEvents);
     }
   };
 

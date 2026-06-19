@@ -53,6 +53,23 @@ export async function apiPost<T>(path: string, body: any): Promise<T> {
   return handleResponse<T>(res);
 }
 
+export async function apiPut<T>(path: string, body: any): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  return handleResponse<T>(res);
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return handleResponse<T>(res);
+}
+
 export async function fetchAlerts(): Promise<ApiAlert[]> {
   return apiGet<ApiAlert[]>('/api/alerts');
 }
@@ -69,11 +86,83 @@ export async function fetchOperators(): Promise<ApiOperator[]> {
   return apiGet<ApiOperator[]>('/api/operators');
 }
 
+export async function fetchInspections(): Promise<any[]> {
+  return apiGet<any[]>('/api/inspections');
+}
+
+export async function fetchMaintenance(): Promise<any[]> {
+  return apiGet<any[]>('/api/maintenance');
+}
+
+export async function fetchShiftAssignments(): Promise<any[]> {
+  return apiGet<any[]>('/api/shift-assignments');
+}
+
 export async function fetchThresholds(): Promise<AlertThresholds> {
   return apiGet<AlertThresholds>('/api/thresholds');
 }
 
 export async function updateThresholds(thresholds: AlertThresholds): Promise<{ ok: boolean }> {
   return apiPost('/api/thresholds', thresholds);
+}
+
+export async function createOperator(operator: ApiOperator): Promise<{ ok: boolean }> {
+  return apiPost('/api/operators', operator);
+}
+
+export async function updateOperator(id: string, payload: Partial<ApiOperator>): Promise<{ ok: boolean }> {
+  return apiPut(`/api/operators/${id}`, payload);
+}
+
+export async function deleteOperator(id: string): Promise<{ ok: boolean }> {
+  return apiDelete(`/api/operators/${id}`);
+}
+
+export async function createInspection(log: {
+  id: string;
+  timestamp: string;
+  partId: string;
+  type: string;
+  status: 'PASS' | 'FAIL' | 'REWORK';
+  severity: 'N/A' | 'MINOR' | 'CRITICAL';
+  line?: string;
+  cycleTime?: number;
+}): Promise<{ ok: boolean }> {
+  return apiPost('/api/inspections', log);
+}
+
+export async function createMaintenance(event: {
+  id: string;
+  machineName: string;
+  machineCode: string;
+  serviceType: string;
+  status: string;
+  dueDate: string;
+  technicianId?: string;
+  notes?: string;
+  priority: 'low' | 'medium' | 'high';
+}): Promise<{ ok: boolean }> {
+  return apiPost('/api/maintenance', event);
+}
+
+export async function updateMaintenance(id: string, payload: Partial<{ machineName: string; machineCode: string; serviceType: string; status: string; dueDate: string; technicianId?: string; notes?: string; priority: 'low' | 'medium' | 'high' }>): Promise<{ ok: boolean }> {
+  return apiPut(`/api/maintenance/${id}`, payload);
+}
+
+export async function deleteMaintenance(id: string): Promise<{ ok: boolean }> {
+  return apiDelete(`/api/maintenance/${id}`);
+}
+
+export async function createShiftAssignment(assignment: {
+  id: string;
+  line: string;
+  day: string;
+  operatorId: string;
+}): Promise<{ ok: boolean }> {
+  return apiPost('/api/shift-assignments', assignment);
+}
+
+export async function deleteShiftAssignment(id: string): Promise<{ ok: boolean }> {
+  return apiDelete(`/api/shift-assignments/${id}`);
 }
 

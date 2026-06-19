@@ -13,8 +13,8 @@ export interface TourStep {
 const STEPS: TourStep[] = [
   {
     targetId: 'tour-sidebar',
-    title: 'Detroit Command Terminal',
-    content: 'Welcome to Detroit plant centralized operations! This navigation sidebar lets you jump between Dashboard, Line Detail, Downtime Forecasting, and Quality Reports views.',
+    title: 'Lilongwe Command Terminal',
+    content: 'Welcome to Lilongwe plant centralized operations! This navigation sidebar lets you jump between Dashboard, Line Detail, Downtime Forecasting, and Quality Reports views.',
     position: 'right',
     tab: 'dashboard'
   },

@@ -43,7 +43,7 @@ export default function Sidebar({ activeTab, setActiveTab, onEmergencyStop, isEm
           AutoFab Pro
         </h1>
         <p className="text-xs font-medium text-[#424754] dark:text-[#c2c6d6] opacity-75 mt-1">
-          Plant 04 - Detroit
+          Plant 04 - Lilongwe
         </p>
       </div>
 

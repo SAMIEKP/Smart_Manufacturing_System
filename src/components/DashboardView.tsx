@@ -303,7 +303,7 @@ export default function DashboardView({
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10);
       doc.setTextColor(161, 168, 186);
-      doc.text('Detroit Central Command Production & Logistics Report', 15, 24);
+      doc.text('Lilongwe Central Command Production & Logistics Report', 15, 24);
       doc.text(`Scope: ${selectedDateRange === 'today' ? 'Today (Current Shift)' : selectedDateRange === 'yesterday' ? 'Yesterday (Comparative)' : selectedDateRange === '7days' ? 'Last 7 Days Run Average' : `Custom Period (${customStartDate} to ${customEndDate})`}`, 15, 30);
       doc.text(`Run Date: ${new Date().toLocaleString()}`, 15, 36);
       
@@ -443,7 +443,7 @@ export default function DashboardView({
         {/* Terminal Info Column */}
         <div className="flex-1 flex flex-col justify-between bg-[#f2f3fd] dark:bg-[#2e3038] py-4 px-5 rounded-xl border border-[#ecedf7] dark:border-[#727785]/20">
           <div>
-            <h2 className="text-[#191b23] dark:text-white font-extrabold text-base">Detroit Central Command Terminal</h2>
+            <h2 className="text-[#191b23] dark:text-white font-extrabold text-base">Lilongwe Central Command Terminal</h2>
             <p className="text-xs text-[#424754] dark:text-[#c2c6d6] mt-1 leading-relaxed">
               Industrial overview system. Live telemetry synchronizes every 30 seconds directly from physical PLC registers.
             </p>

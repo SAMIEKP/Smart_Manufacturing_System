@@ -32,71 +32,13 @@ import {
 
 // Imports from types and local files
 import { Alert, Operator, ShiftAssignment, InspectionLog, AlertThresholds, MaintenanceEvent } from './types';
-import { 
-  INITIAL_ALERTS, 
-  INITIAL_OPERATORS, 
-  INITIAL_SHIFTS, 
-  INITIAL_INSPECTIONS, 
-  DEFAULT_THRESHOLDS 
-} from './data';
-import { fetchAlerts, fetchOperators, fetchThresholds } from './apiClient';
+import LoginPage from './components/LoginPage';
+import { fetchAlerts, fetchOperators, fetchThresholds, fetchInspections, fetchMaintenance, fetchShiftAssignments } from './apiClient';
 
-const INITIAL_MAINTENANCE: MaintenanceEvent[] = [
-  {
-    id: 'maint-1',
-    machineName: 'CNC ALPHA-1',
-    machineCode: 'SV-102-A1',
-    serviceType: 'Axis 3 Servomotor Realignment',
-    status: 'Overdue',
-    dueDate: '2026-06-12',
-    technicianId: 'op-5', // Robert Brown
-    priority: 'high',
-    notes: 'vibration sensor feedback exceeded limits by 14% on last shift.'
-  },
-  {
-    id: 'maint-2',
-    machineName: 'PRESS DELTA-04',
-    machineCode: 'PR-92',
-    serviceType: 'Hydraulic Seal & Fluid Swap',
-    status: 'In Progress',
-    dueDate: '2026-06-16',
-    technicianId: 'op-1', // Marcus Kane
-    priority: 'medium',
-    notes: 'Standard 500-hour system overhaul.'
-  },
-  {
-    id: 'maint-3',
-    machineName: 'Precision Laser',
-    machineCode: 'LS-004-W1',
-    serviceType: 'Lens Cleaning & Defocus Alignment',
-    status: 'Scheduled',
-    dueDate: '2026-06-18',
-    priority: 'high',
-    notes: 'Calibration checks display minor weld gap tolerance drifting.'
-  },
-  {
-    id: 'maint-4',
-    machineName: 'LATHE SIGMA-1',
-    machineCode: 'LT-88',
-    serviceType: 'Main Spindle Bearing Lubrication',
-    status: 'Scheduled',
-    dueDate: '2026-06-25',
-    technicianId: 'op-3', // John Doe
-    priority: 'low'
-  },
-  {
-    id: 'maint-5',
-    machineName: 'MILL GAMMA-2',
-    machineCode: 'ML-02',
-    serviceType: 'Coolant Pump Line Flush',
-    status: 'Completed',
-    dueDate: '2026-06-10',
-    technicianId: 'op-5', // Robert Brown
-    priority: 'low',
-    notes: 'Completed coolant swap and filter replacement.'
-  }
-];
-
+const DEFAULT_THRESHOLDS: AlertThresholds = {
+  criticalTemp: 85,
+  vibrationTolerance: 2.4
+};
 
 // Modular views imports
 import Sidebar from './components/Sidebar';
@@ -166,31 +108,54 @@ export default function App() {
   const [showTour, setShowTour] = useState<boolean>(false);
   
   // Shared state engines
-  const [alerts, setAlerts] = useState<Alert[]>(INITIAL_ALERTS);
-  const [operators, setOperators] = useState<Operator[]>(INITIAL_OPERATORS);
-  const [shiftAssignments, setShiftAssignments] = useState<ShiftAssignment[]>(INITIAL_SHIFTS);
-  const [inspections, setInspections] = useState<InspectionLog[]>(INITIAL_INSPECTIONS);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [shiftAssignments, setShiftAssignments] = useState<ShiftAssignment[]>([]);
+  const [inspections, setInspections] = useState<InspectionLog[]>([]);
   const [thresholds, setThresholds] = useState<AlertThresholds>(DEFAULT_THRESHOLDS);
-  const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>(INITIAL_MAINTENANCE);
+  const [maintenanceEvents, setMaintenanceEvents] = useState<MaintenanceEvent[]>([]);
+  const [backendLoaded, setBackendLoaded] = useState(false);
+  const [backendError, setBackendError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => localStorage.getItem('authenticated') === 'true');
 
   // Load persisted UI-critical state from backend
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     (async () => {
       try {
-        const [a, o, t] = await Promise.all([
+        const [a, o, t, insp, maint, sa] = await Promise.all([
           fetchAlerts(),
           fetchOperators(),
           fetchThresholds(),
+          fetchInspections(),
+          fetchMaintenance(),
+          fetchShiftAssignments(),
         ]);
-        setAlerts(a as any);
-        setOperators(o as any);
-        setThresholds(t as any);
+
+        setAlerts(Array.isArray(a) ? (a as any) : []);
+        setOperators(Array.isArray(o) ? (o as any) : []);
+        setThresholds(t || DEFAULT_THRESHOLDS);
+        setInspections(Array.isArray(insp) ? (insp as any) : []);
+        setMaintenanceEvents(Array.isArray(maint) ? (maint as any) : []);
+        setShiftAssignments(Array.isArray(sa) ? (sa as any) : []);
+        setBackendError(null);
       } catch (e) {
-        // Fallback to existing in-memory simulation data
-        console.warn('Backend bootstrap failed, using local simulation defaults.', e);
+        console.warn('Backend bootstrap failed, data unavailable.', e);
+        setAlerts([]);
+        setOperators([]);
+        setThresholds(DEFAULT_THRESHOLDS);
+        setInspections([]);
+        setMaintenanceEvents([]);
+        setShiftAssignments([]);
+        setBackendError('Unable to reach the backend API. Please verify the service is running.');
+      } finally {
+        setBackendLoaded(true);
       }
     })();
-  }, []);
+  }, [isAuthenticated]);
 
 
 
@@ -236,6 +201,20 @@ export default function App() {
 
   const [resettingAlertId, setResettingAlertId] = useState<string | null>(null);
   const [resetSuccessAlertId, setResetSuccessAlertId] = useState<string | null>(null);
+
+  const handleLogin = (username: string, password: string) => {
+    if (!username.trim() || !password.trim()) {
+      throw new Error('Please provide both username and password.');
+    }
+
+    localStorage.setItem('authenticated', 'true');
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('authenticated');
+    setIsAuthenticated(false);
+  };
 
   const handleRemoteReset = (id: string) => {
     setResettingAlertId(id);
@@ -471,6 +450,10 @@ export default function App() {
 
   const unacknowledgedCriticalAlerts = alerts.filter(a => a.type === 'critical' && !a.acknowledged);
 
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className={`min-h-screen flex text-[#191b23] dark:text-zinc-50 bg-[#fbfbfe] dark:bg-[#13151a] transition-colors duration-200 font-sans`}>
       
@@ -534,6 +517,13 @@ export default function App() {
               title={soundEnabled ? 'Mute notification sound clicks' : 'Enable notification sound clicks'}
             >
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-red-400" />}
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="px-3 py-2 border border-[#ecedf7] dark:border-[#727785]/20 rounded-lg text-xs font-semibold text-[#424754] dark:text-[#c2c6d6] hover:bg-[#e6e7f2] dark:hover:bg-[#2e3038]"
+            >
+              Logout
             </button>
 
             {/* Dark Mode toggle trigger */}
@@ -975,7 +965,7 @@ export default function App() {
                                     <input 
                                       type="checkbox"
                                       checked={isSelected}
-                                      onChange={() => {}} // dummy call, outer parent is onClick handler
+                                      onChange={() => {}}
                                       className="w-3.5 h-3.5 accent-[#0058be] rounded border-zinc-300 dark:border-zinc-700 cursor-pointer"
                                     />
                                   </div>

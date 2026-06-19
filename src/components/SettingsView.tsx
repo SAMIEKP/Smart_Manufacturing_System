@@ -24,6 +24,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import { Operator, AlertThresholds } from '../types';
+import { createOperator, updateOperator, updateThresholds } from '../apiClient';
 
 interface SettingsViewProps {
   operators: Operator[];
@@ -44,6 +45,8 @@ export default function SettingsView({
   // local threshold states
   const [tempInput, setTempInput] = useState(thresholds.criticalTemp);
   const [vibrationInput, setVibrationInput] = useState(thresholds.vibrationTolerance);
+  const [isSavingThresholds, setIsSavingThresholds] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -65,6 +68,11 @@ export default function SettingsView({
   const [editStatus, setEditStatus] = useState<'active' | 'offline'>('offline');
   const [editExpertise, setEditExpertise] = useState<Record<string, 'None' | 'Beginner' | 'Intermediate' | 'Expert'>>({});
 
+  useEffect(() => {
+    setTempInput(thresholds.criticalTemp);
+    setVibrationInput(thresholds.vibrationTolerance);
+  }, [thresholds]);
+
   const handleStartEdit = (op: Operator) => {
     setEditingOperator(op);
     setEditName(op.name);
@@ -79,7 +87,7 @@ export default function SettingsView({
     });
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingOperator) return;
 
@@ -106,16 +114,45 @@ export default function SettingsView({
       return op;
     });
 
-    setOperators(updated);
-    setEditingOperator(null);
+    try {
+      await updateOperator(editingOperator.id, {
+        name: editName,
+        email: editEmail,
+        role: editRole,
+        status: editStatus,
+        initials: opInitials || 'OP',
+        level: editRole,
+        expertise: editExpertise,
+      });
+      setOperators(updated);
+      setEditingOperator(null);
+      setSaveError(null);
+    } catch (err) {
+      setSaveError('Unable to update operator, please try again.');
+      console.error(err);
+    }
   };
 
-  const handleUpdateThresholds = () => {
-    setThresholds({
-      criticalTemp: tempInput,
-      vibrationTolerance: vibrationInput
-    });
-    alert(`System parameters updated! Trigger limits: Critical Temperature: ${tempInput}°C, Vibration tolerance: ${vibrationInput} G-force.`);
+  const handleUpdateThresholds = async () => {
+    setIsSavingThresholds(true);
+    setSaveError(null);
+
+    try {
+      await updateThresholds({
+        criticalTemp: tempInput,
+        vibrationTolerance: vibrationInput
+      });
+      setThresholds({
+        criticalTemp: tempInput,
+        vibrationTolerance: vibrationInput
+      });
+      alert(`System parameters updated! Trigger limits: Critical Temperature: ${tempInput}°C, Vibration tolerance: ${vibrationInput} G-force.`);
+    } catch (err) {
+      setSaveError('Unable to update alert thresholds at this time.');
+      console.error(err);
+    } finally {
+      setIsSavingThresholds(false);
+    }
   };
 
   const handleCopyKey = (id: string, text: string) => {
@@ -130,7 +167,7 @@ export default function SettingsView({
     }
   };
 
-  const handleAddOperator = (e: React.FormEvent) => {
+  const handleAddOperator = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
 
@@ -159,9 +196,16 @@ export default function SettingsView({
       }
     };
 
-    setOperators([...operators, nOperator]);
-    setNewName('');
-    setIsAddOpen(false);
+    try {
+      await createOperator(nOperator);
+      setOperators([...operators, nOperator]);
+      setNewName('');
+      setIsAddOpen(false);
+      setSaveError(null);
+    } catch (err) {
+      setSaveError('Unable to create operator. Please try again.');
+      console.error(err);
+    }
   };
 
   const menuSections = [
@@ -274,13 +318,21 @@ export default function SettingsView({
 
             </div>
 
-            <div className="px-5 py-3.5 bg-zinc-50 dark:bg-zinc-800/10 border-t border-[#ecedf7] dark:border-[#727785]/20 flex justify-end">
-              <button 
-                onClick={handleUpdateThresholds}
-                className="px-4 py-2 bg-[#0058be] hover:opacity-90 text-white rounded-lg text-xs font-bold shadow"
-              >
-                Update Thresholds
-              </button>
+            <div className="px-5 py-3.5 bg-zinc-50 dark:bg-zinc-800/10 border-t border-[#ecedf7] dark:border-[#727785]/20">
+              {saveError && (
+                <div className="mb-3 text-xs text-red-700 dark:text-red-300 font-semibold">
+                  {saveError}
+                </div>
+              )}
+              <div className="flex justify-end">
+                <button 
+                  onClick={handleUpdateThresholds}
+                  disabled={isSavingThresholds}
+                  className="px-4 py-2 bg-[#0058be] hover:opacity-90 text-white rounded-lg text-xs font-bold shadow disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSavingThresholds ? 'Saving…' : 'Update Thresholds'}
+                </button>
+              </div>
             </div>
 
           </div>
@@ -292,7 +344,7 @@ export default function SettingsView({
             <ShieldAlert className="w-8 h-8 text-[#0058be] mx-auto mb-3" />
             <h4 className="font-extrabold text-[#191b23] dark:text-white text-sm">Industrial Vault Controls</h4>
             <p className="text-xs text-[#727785] mt-1 max-w-sm mx-auto">
-              Vault permission parameters remain governed by Enterprise Detroit IT protocols. Contact the senior supervisor for modifications.
+              Vault permission parameters remain governed by Enterprise Lilongwe IT protocols. Contact the senior supervisor for modifications.
             </p>
           </div>
         )}
