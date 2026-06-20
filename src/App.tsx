@@ -519,12 +519,134 @@ export default function App() {
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-red-400" />}
             </button>
 
-            <button
-              onClick={handleLogout}
-              className="px-3 py-2 border border-[#ecedf7] dark:border-[#727785]/20 rounded-lg text-xs font-semibold text-[#424754] dark:text-[#c2c6d6] hover:bg-[#e6e7f2] dark:hover:bg-[#2e3038]"
-            >
-              Logout
-            </button>
+            {/* Profile Dropdown (Header) */}
+            {(() => {
+              const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+              const [profileRole, setProfileRole] = useState<string>(() => {
+                return localStorage.getItem('role') || 'admin';
+              });
+              const [profileImageDataUrl, setProfileImageDataUrl] = useState<string | null>(() => {
+                return localStorage.getItem('profileImageDataUrl');
+              });
+
+              // Close dropdown on outside click
+              useEffect(() => {
+                if (!profileMenuOpen) return;
+                const onDocClick = (e: MouseEvent) => {
+                  const t = e.target as HTMLElement | null;
+                  if (!t) return;
+                  // data attribute marker: [data-profile-menu]
+                  if (t.closest('[data-profile-menu]')) return;
+                  setProfileMenuOpen(false);
+                };
+                document.addEventListener('mousedown', onDocClick);
+                return () => document.removeEventListener('mousedown', onDocClick);
+              }, [profileMenuOpen]);
+
+              const signOut = () => {
+                handleLogout();
+                setProfileMenuOpen(false);
+              };
+
+              const onUpload = (file: File | null) => {
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                  alert('Please select an image file.');
+                  return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const dataUrl = String(reader.result || '');
+                  if (!dataUrl) return;
+                  localStorage.setItem('profileImageDataUrl', dataUrl);
+                  setProfileImageDataUrl(dataUrl);
+                };
+                reader.readAsDataURL(file);
+              };
+
+              return (
+                <div className="relative" data-profile-menu>
+                  <button
+                    type="button"
+                    onClick={() => setProfileMenuOpen(v => !v)}
+                    className="p-2 border border-[#ecedf7] dark:border-[#727785]/20 rounded-lg hover:bg-[#e6e7f2] dark:hover:bg-[#2e3038] transition-colors"
+                    title="Profile"
+                  >
+                    <span className="w-8 h-8 rounded-full bg-[#0058be]/10 dark:bg-blue-500/10 flex items-center justify-center overflow-hidden">
+                      {profileImageDataUrl ? (
+                        <img
+                          src={profileImageDataUrl}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full border-2 border-[#0058be] dark:border-blue-300 flex items-center justify-center">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0058be] dark:bg-blue-300" />
+                        </span>
+                      )}
+                    </span>
+                  </button>
+
+                  <AnimatePresence>
+                    {profileMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-[240px] bg-white dark:bg-[#191b23] border border-[#ecedf7] dark:border-[#727785]/20 rounded-xl shadow-2xl overflow-hidden z-50"
+                      >
+                        <div className="px-3 py-2 border-b border-[#ecedf7] dark:border-[#727785]/20">
+                          <div className="text-[10px] font-extrabold text-[#727785] dark:text-zinc-400 uppercase tracking-widest">Signed in as</div>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className="text-xs font-extrabold text-[#191b23] dark:text-zinc-200 capitalize">{profileRole}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f2f3fd] dark:bg-zinc-800/50 text-[#0058be] dark:text-blue-400 font-extrabold">Operator</span>
+                          </div>
+                        </div>
+
+                        <div className="p-2 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <label className="text-[10px] font-extrabold text-[#727785] dark:text-zinc-400 uppercase tracking-wider">Profile image</label>
+                            <label className="text-[10px] cursor-pointer font-extrabold px-2 py-1 rounded-lg bg-[#0058be] hover:bg-opacity-95 text-white" title="Upload image">
+                              Update
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => onUpload(e.target.files?.[0] || null)}
+                              />
+                            </label>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = profileRole === 'admin' ? 'staff' : profileRole === 'staff' ? 'manager' : profileRole === 'manager' ? 'HR' : 'admin';
+                              const normalized = next === 'HR' ? 'HR' : next;
+                              setProfileRole(normalized);
+                              localStorage.setItem('role', normalized);
+                            }}
+                            className="w-full text-left text-xs font-bold px-3 py-2 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-750 transition-colors"
+                          >
+                            Change role (demo)
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={signOut}
+                            className="w-full text-left text-xs font-extrabold px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                          >
+                            Sign out
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })()}
+
+            {/* Dark Mode toggle trigger */}
 
             {/* Dark Mode toggle trigger */}
             <button 
