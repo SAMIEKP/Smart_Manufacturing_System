@@ -370,7 +370,7 @@ export default function App() {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a));
 
     // persist
-    fetch('http://127.0.0.1:5000/api/alerts/ack', {
+    fetch('http://127.0.0.1:5001/api/alerts/ack', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: [id] }),
@@ -401,7 +401,7 @@ export default function App() {
     setAlerts(prev => prev.map(a => ({ ...a, acknowledged: true })));
 
     const ids = alerts.map(a => a.id);
-    fetch('http://127.0.0.1:5000/api/alerts/ack', {
+    fetch('http://127.0.0.1:5001/api/alerts/ack', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids }),
